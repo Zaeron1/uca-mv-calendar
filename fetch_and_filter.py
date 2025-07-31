@@ -5,17 +5,23 @@ from datetime import datetime
 
 # === PARAMÈTRES ===
 uca_url = "https://edt.uca.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=17227,17226,15732,15724,10397,10385,10384,7652&projectId=3&calType=ical&nbWeeks=8&displayConfigId=128"
-repo_path = "uca-mv-calendar"  # chemin local vers ton dépôt cloné
+repo_path = "uca-mv-calendar"
 output_filename = "index.txt"
 github_username = "Zaeron1"
-github_token = "ghp_xxxxxxxxxxxxxxxxxxxxxx"  # Ton token GitHub
+github_token = "ghp_xxxxxxxxxxxxxxxxxxxxxx"  # Ne jamais publier ce token !
 
 # === TÉLÉCHARGER ICS ===
-response = requests.get(uca_url)
+try:
+    response = requests.get(uca_url)
+    response.raise_for_status()
+except Exception as e:
+    print("Erreur lors du téléchargement :", e)
+    exit(1)
+
 lines = response.text.splitlines()
 
 # === FILTRER EVENEMENTS MV ===
-filtered_events = []
+filtered_blocks = []
 event = []
 in_event = False
 
@@ -28,7 +34,7 @@ for line in lines:
         in_event = False
         block = "\n".join(event)
         if "MV" in block:
-            filtered_events.extend(event)
+            filtered_blocks.append(block)
     elif in_event:
         event.append(line)
 
@@ -41,12 +47,13 @@ for line in lines:
         in_header = False
     if in_header:
         header.append(line)
-    if line.startswith("END:VCALENDAR"):
-        footer.append(line)
+for line in reversed(lines):
+    footer.insert(0, line)
+    if line.startswith("END:VEVENT"):
         break
 
 # === ÉCRITURE ===
-final_content = "\n".join(header + filtered_events + footer)
+final_content = "\n".join(header + filtered_blocks + footer)
 output_path = os.path.join(repo_path, output_filename)
 os.makedirs(repo_path, exist_ok=True)
 with open(output_path, "w", encoding="utf-8") as f:
@@ -55,11 +62,13 @@ with open(output_path, "w", encoding="utf-8") as f:
 print("✅ Calendrier filtré écrit :", output_path)
 
 # === PUSH AUTOMATIQUE ===
-repo = Repo(repo_path)
-repo.git.add(output_filename)
-repo.index.commit(f"Update MV calendar - {datetime.now().isoformat()}")
-repo.remote().set_url(f"https://{github_username}:{github_token}@github.com/{github_username}/uca-mv-calendar.git")
-repo.git.push("origin", "gh-pages")
-
-print("🌍 Calendrier en ligne :")
-print(f"https://{github_username}.github.io/uca-mv-calendar/{output_filename}")
+try:
+    repo = Repo(repo_path)
+    repo.git.add(output_filename)
+    repo.index.commit(f"Update MV calendar - {datetime.now().isoformat()}")
+    repo.remote().set_url(f"https://{github_username}:{github_token}@github.com/{github_username}/uca-mv-calendar.git")
+    repo.git.push("origin", "gh-pages")
+    print("🌍 Calendrier en ligne :")
+    print(f"https://{github_username}.github.io/uca-mv-calendar/{output_filename}")
+except Exception as e:
+    print("Erreur lors du push :", e)
