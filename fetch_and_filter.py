@@ -6,7 +6,7 @@ from datetime import datetime
 # === PARAMÈTRES ===
 uca_url = "https://edt.uca.fr/jsp/custom/modules/plannings/anonymous_cal.jsp?resources=17227,17226,15732,15724,10397,10385,10384,7652&projectId=3&calType=ical&nbWeeks=8&displayConfigId=128"
 repo_path = "uca-mv-calendar"  # chemin local vers ton dépôt cloné
-output_filename = "index.ics"
+output_filename = "index.txt"
 github_username = "Zaeron1"
 github_token = "ghp_xxxxxxxxxxxxxxxxxxxxxx"  # Ton token GitHub
 
